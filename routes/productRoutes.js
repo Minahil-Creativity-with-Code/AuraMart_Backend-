@@ -99,12 +99,83 @@ router.get('/search/category/:category', async (req, res) => {
 // Get Products by Category (alternative endpoint)
 router.get('/category/:category', async (req, res) => {
   try {
-    const products = await Product.find({ 
-      categories: { $in: [req.params.category] }
-    });
+    const { category } = req.params;
+    const products = await Product.find({ categories: { $in: [category] } }).sort({ createdAt: -1 });
     res.status(200).json(products);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Category search error:', err);
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
+});
+
+// Get product by name and color (for color variants)
+router.get('/variant/:name/:color', async (req, res) => {
+  try {
+    const { name, color } = req.params;
+    
+    // Find product with exact name and color
+    const product = await Product.findOne({
+      name: name,
+      'attributes.colors': color
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product variant not found' });
+    }
+
+    res.status(200).json(product);
+  } catch (err) {
+    console.error('Product variant search error:', err);
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
+});
+
+// Get all variants of a product by name
+router.get('/variants/:name', async (req, res) => {
+  try {
+    const { name } = req.params;
+    
+    // Find all products with the same base name
+    const variants = await Product.find({
+      name: { $regex: new RegExp(`^${name.replace(/[0-9]+$/, '')}`, 'i') }
+    }).sort({ createdAt: -1 });
+
+    if (!variants || variants.length === 0) {
+      return res.status(404).json({ error: 'No product variants found' });
+    }
+
+    // Create a map of color to product variant
+    const colorToProductMap = {};
+    const allAvailableColors = new Set();
+    
+    variants.forEach(variant => {
+      if (variant.attributes && variant.attributes.colors) {
+        variant.attributes.colors.forEach(color => {
+          allAvailableColors.add(color);
+          if (!colorToProductMap[color]) {
+            colorToProductMap[color] = [];
+          }
+          colorToProductMap[color].push({
+            _id: variant._id,
+            name: variant.name,
+            image: variant.image,
+            prices: variant.prices,
+            stockQuantity: variant.stockQuantity,
+            isActive: variant.isActive
+          });
+        });
+      }
+    });
+
+    res.status(200).json({
+      baseName: name.replace(/[0-9]+$/, ''),
+      colorToProductMap: colorToProductMap,
+      allAvailableColors: Array.from(allAvailableColors),
+      allVariants: variants
+    });
+  } catch (err) {
+    console.error('Product variants search error:', err);
+    res.status(500).json({ error: err.message || 'Server error' });
   }
 });
 

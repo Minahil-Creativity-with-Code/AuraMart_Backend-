@@ -106,6 +106,58 @@ router.post('/login', async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+// Register route
+router.post("/register", async (req, res) => {
+  try {
+    const { name, email, password, role, image, profession, gender, address, phone } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      image,
+      profession,
+      gender,
+      address,
+      phone,
+    });
+
+    const savedUser = await newUser.save();
+
+    const token = jwt.sign(
+      { id: savedUser._id, role: savedUser.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const userResponse = {
+      _id: savedUser._id,
+      name: savedUser.name,
+      email: savedUser.email,
+      image: savedUser.image,
+      role: savedUser.role,
+      profession: savedUser.profession,
+      gender: savedUser.gender,
+      address: savedUser.address,
+      phone: savedUser.phone,
+      isEmailVerified: savedUser.isEmailVerified,
+      createdAt: savedUser.createdAt,
+    };
+
+    res.status(201).json({ token, user: userResponse });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
     // Generate JWT token
     const token = generateToken(user._id);
