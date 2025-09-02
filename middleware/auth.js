@@ -1,18 +1,18 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const jwt = require('jsonwebtoken'); //jwt library
+const User = require('../models/User'); //userSchema 
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';  //from env 
 
 // Middleware to verify JWT token
-const authenticateToken = async (req, res, next) => {
-  try {
-    const authHeader = req.headers['authorization'];
+const authenticateToken = async (req, res, next) => {    //an async middleware function called authenticateToken.
+  try {                                                  //Middleware functions in Express take (req, res, next) arguments.
+    const authHeader = req.headers['authorization'];   //Gets the Authorization header from the incoming HTTP request.
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-    if (!token) {
+ 
+    if (!token) {                                              // If no token is found, return a 401 Unauthorized response.
       return res.status(401).json({ error: 'Access token required' });
     }
-
+    //Verifies the JWT using the secret key. If valid, returns the decoded payload ,If invalid, throws an error
     const decoded = jwt.verify(token, JWT_SECRET);
     
     // Check if the token has the correct structure

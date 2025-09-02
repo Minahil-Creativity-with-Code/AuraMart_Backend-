@@ -1,4 +1,5 @@
-const mongoose = require('mongoose'); //imports the library,used to define schemas and interact with MongoDB in an object-oriented way.
+//imports the library,used to define schemas and interact with MongoDB in an object-oriented way
+const mongoose = require('mongoose');  
 
 const productSchema = new mongoose.Schema({
   name: { 
@@ -57,10 +58,14 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
+
+//This code fixes product data before saving (like cleaning attributes) and shows all attributes together when you fetch the product.
+
+
 // Pre-save middleware to handle dynamic attributes and ensure proper data types
 productSchema.pre('save', function(next) {
   // Process main attributes
-  if (this.attributes && typeof this.attributes === 'object') {
+  if (this.attributes && typeof this.attributes === 'object') {   //this → Refers to the product document being saved.
     const schemaKeys = ['colors', 'sizes', 'brand', 'material'];
     
     // Process each attribute to ensure proper data types

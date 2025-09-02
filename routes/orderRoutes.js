@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { sendOrderConfirmationEmail } = require('../utils/emailService');
 
 // ✅ Helper function to calculate total
 const calculateTotalAmount = (items) => {
@@ -26,10 +27,19 @@ router.post('/create', async (req, res) => {
       userId,
       items,
       shippingAddress,
-      totalAmount, // ✅ auto calculated
+      totalAmount, 
     });
 
     const savedOrder = await newOrder.save();
+    // 📩 Send order confirmation email
+    await sendOrderConfirmationEmail(
+      email,                     // customer email
+      customerName,              // customer name
+      savedOrder._id,          // order ID
+      items,                     // ordered items
+      totalAmount                // total amount
+    );
+
     res.status(201).json(savedOrder);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -60,11 +70,24 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     });
 
     const savedOrder = await newOrder.save();
+    console.log('sucessfully ordered');
+
+    // 📩 Send order confirmation email
+    await sendOrderConfirmationEmail(
+      email,                     // customer email
+      customerName,              // customer name
+      savedOrder._id,          // order ID
+      items,                     // ordered items
+      totalAmount                // total amount
+    );
+
     res.status(201).json(savedOrder);
   } catch (err) {
+    console.error("❌ Error creating order:", err);
     res.status(400).json({ error: err.message });
   }
 });
+
 
 // ✅ Get All Orders (Admin only)
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {

@@ -1,3 +1,4 @@
+//Schema For Order in MongoDB
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({

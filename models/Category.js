@@ -1,3 +1,4 @@
+//Schema For Categories in MongoDB
 const mongoose = require('mongoose');
 
 const categorySchema = new mongoose.Schema({
